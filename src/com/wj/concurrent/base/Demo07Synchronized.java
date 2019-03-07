@@ -2,6 +2,11 @@ package com.wj.concurrent.base;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 同步方法：继承
+ * 子类同步方法覆盖父类的同步方法，可以指定调用父类的同步方法
+ * 相当于锁的重入
+ */
 public class Demo07Synchronized {
 
     synchronized void m(){
