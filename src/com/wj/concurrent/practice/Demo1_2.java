@@ -3,7 +3,7 @@ package com.wj.concurrent.practice;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class Demo3 {
+public class Demo1_2 {
 
     public static void main(String[] args) {
         final MyCollection2 collection2 = new MyCollection2();

@@ -1,75 +1,83 @@
 package com.wj.concurrent.practice;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
-public class Demo2 {
+/**
+ * 生产者消费者模式
+ * wait/notify
+ */
+public class Demo2<E> {
+
+    private final LinkedList<E> list = new LinkedList<>();
+    private final int MAX = 10;
+    private int count = 0;
+
+    public synchronized int getCount(){
+        return count;
+    }
+
+    public synchronized void put(E e){
+        while(list.size() == MAX){
+            try {
+                this.wait();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        list.add(e);
+        count++;
+        this.notifyAll();
+    }
+
+    public synchronized E get(){
+        E e = null;
+        while (list.size() == 0){
+            try {
+                this.wait();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+        }
+        e = list.removeFirst();
+        count--;
+        this.notifyAll();
+        return e;
+    }
 
     public static void main(String[] args) {
-        final MyCollection2 collection2 = new MyCollection2();
-        final Object lock = new Object();
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (lock) {
-                    if(collection2.size() != 5){
-                        try {
-                            lock.wait();  //线程进入等待队列
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    System.out.println("size == " + collection2.size());
-                    lock.notifyAll();  //唤醒其它等待线程
-                }
-            }
-        }).start();
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (lock) {
-                    for(int i = 0; i < 10; i++){
-                        collection2.add(i);
-                        System.out.println("add " + i);
-                        if(collection2.size() == 5){
-                            lock.notifyAll();
-                            try {
-                                lock.wait();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        try {
-                            TimeUnit.SECONDS.sleep(1);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+        final Demo2<String> d = new Demo2<>();
+        for(int i = 0; i < 10; i++){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for(int j = 0; j < 5; j++){
+                        System.out.println(d.get());
                     }
                 }
-            }
-        }).start();
+            },"consumer-" + i).start();
+        }
+
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        for(int i = 0; i < 2; i++){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for(int j = 0; j < 25; j++){
+                        d.put("container value -" + Thread.currentThread().getName() + ": " + j);
+                    }
+                }
+            },"producer-" + i).start();
+        }
     }
+
+
 
 }
 
-class MyCollection2{
-
-    private /*volatile*/ int size;
-
-    private List list = new ArrayList(); //容器
-
-
-    public void add(Object o){
-        list.add(o);
-    }
-
-    public int size(){
-        this.size = list.size();
-        return this.size;
-    }
-
-}
